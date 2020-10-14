@@ -1,0 +1,48 @@
+- name: Configure application
+  hosts: all
+  become: true
+  become_method: sudo
+  vars:
+      repository_url: https://github.com/ProgrammeVitam/vitam.git
+      repository_path: /home/vagrant/vitam
+
+  tasks:
+    - name: Update all Ubuntu packages
+      apt:
+        upgrade: "dist"
+
+    - name: Install packages
+      apt: 
+        pkg:
+        - git
+        - docker.io
+        - openjdk-11-jdk
+        - maven
+        - openssh-server
+        state: present
+        update_cache: yes
+
+    - name: Clone repository
+      git: repo='{{ repository_url }}' dest='{{ repository_path }}'
+
+    - name: Running mvn clean
+      shell: "mvn --version"
+    
+    #- name: Active Docker
+    #  shell: "sudo systemctl enable --now docker"
+
+    - name: Ensure the docker service is running
+      service:
+        name: docker
+        state: started
+      become: yes
+
+    - name: Add user Vagrant to the Docker group
+      shell: "sudo usermod -aG docker vagrant"
+
+    #TODO change to better way to use sudo
+    - name: Ensure the ssh service is running
+      service:
+        name: ssh
+        state: started
+      become: yes
